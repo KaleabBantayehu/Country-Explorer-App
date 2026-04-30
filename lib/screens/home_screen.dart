@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/country.dart';
+import '../screens/search_screen.dart';
 import '../services/api_exception.dart';
 import '../services/country_api_service.dart';
 
@@ -44,7 +45,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Country Explorer'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Country Explorer'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Country>>(
         future: _futureCountries,
         builder: (context, snapshot) {

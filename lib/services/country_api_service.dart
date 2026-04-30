@@ -17,74 +17,105 @@ class CountryApiService {
       'fields': 'name,flags,region,population',
     });
 
-    try {
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-      _checkResponse(response);
+    return _fetchWithRetry(uri);
+  }
 
-      final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
-      return decoded
-          .map((item) => Country.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } on SocketException catch (error) {
-      throw ApiException('No internet connection: ${error.message}');
-    } on TimeoutException catch (error) {
-      throw ApiException('Request timed out: ${error.message}');
-    } on FormatException catch (error) {
-      throw ApiException('Invalid response format: ${error.message}');
-    } on ApiException {
-      rethrow;
-    } catch (error) {
-      throw ApiException('Unknown error: $error');
+  Future<List<Country>> _fetchWithRetry(Uri uri) async {
+    int attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        final response = await http
+            .get(uri, headers: _headers)
+            .timeout(_timeout);
+        _checkResponse(response);
+
+        final dynamic decodedData = jsonDecode(response.body);
+        if (decodedData is! List) {
+          throw ApiException('Unexpected response format: expected list');
+        }
+
+        final List<dynamic> decoded = decodedData;
+        return decoded
+            .map((item) => Country.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } on TimeoutException catch (error) {
+        if (attempts >= maxAttempts) {
+          throw ApiException(
+            'Request timed out after $maxAttempts attempts: ${error.message}',
+          );
+        }
+        // Wait a bit before retrying
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      } on SocketException catch (error) {
+        throw ApiException('No internet connection: ${error.message}');
+      } on FormatException catch (error) {
+        throw ApiException('Invalid response format: ${error.message}');
+      } on ApiException {
+        rethrow;
+      } catch (error) {
+        throw ApiException('Unknown error: $error');
+      }
     }
+    throw ApiException('Request failed after $maxAttempts attempts');
   }
 
   Future<List<Country>> searchCountries(String name) async {
     final uri = Uri.https(_baseUrl, '/v3.1/name/$name');
 
-    try {
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-      _checkResponse(response);
-
-      final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
-      return decoded
-          .map((item) => Country.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } on SocketException catch (error) {
-      throw ApiException('No internet connection: ${error.message}');
-    } on TimeoutException catch (error) {
-      throw ApiException('Request timed out: ${error.message}');
-    } on FormatException catch (error) {
-      throw ApiException('Invalid response format: ${error.message}');
-    } on ApiException {
-      rethrow;
-    } catch (error) {
-      throw ApiException('Unknown error: $error');
-    }
+    return _fetchWithRetry(uri);
   }
 
   Future<Country> fetchCountryByCode(String code) async {
     final uri = Uri.https(_baseUrl, '/v3.1/alpha/$code');
 
-    try {
-      final response = await http.get(uri, headers: _headers).timeout(_timeout);
-      _checkResponse(response);
+    return _fetchSingleWithRetry(uri);
+  }
 
-      final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
-      if (decoded.isEmpty) {
-        throw ApiException('Country not found for code: $code', 404);
+  Future<Country> _fetchSingleWithRetry(Uri uri) async {
+    int attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        final response = await http
+            .get(uri, headers: _headers)
+            .timeout(_timeout);
+        _checkResponse(response);
+
+        final dynamic decodedData = jsonDecode(response.body);
+        if (decodedData is! List || decodedData.isEmpty) {
+          throw ApiException(
+            'Country not found for code: ${uri.pathSegments.last}',
+            404,
+          );
+        }
+
+        final List<dynamic> decoded = decodedData;
+        return Country.fromJson(decoded.first as Map<String, dynamic>);
+      } on TimeoutException catch (error) {
+        if (attempts >= maxAttempts) {
+          throw ApiException(
+            'Request timed out after $maxAttempts attempts: ${error.message}',
+          );
+        }
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      } on SocketException catch (error) {
+        throw ApiException('No internet connection: ${error.message}');
+      } on FormatException catch (error) {
+        throw ApiException('Invalid response format: ${error.message}');
+      } on ApiException {
+        rethrow;
+      } catch (error) {
+        throw ApiException('Unknown error: $error');
       }
-      return Country.fromJson(decoded.first as Map<String, dynamic>);
-    } on SocketException catch (error) {
-      throw ApiException('No internet connection: ${error.message}');
-    } on TimeoutException catch (error) {
-      throw ApiException('Request timed out: ${error.message}');
-    } on FormatException catch (error) {
-      throw ApiException('Invalid response format: ${error.message}');
-    } on ApiException {
-      rethrow;
-    } catch (error) {
-      throw ApiException('Unknown error: $error');
     }
+    throw ApiException('Request failed after $maxAttempts attempts');
   }
 
   void _checkResponse(http.Response response) {
