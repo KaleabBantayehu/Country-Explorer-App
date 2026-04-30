@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/country.dart';
+import '../screens/detail_screen.dart';
 import '../screens/search_screen.dart';
 import '../services/api_exception.dart';
 import '../services/country_api_service.dart';
@@ -113,6 +114,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 6.0),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(12.0),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DetailScreen(code: country.alpha3Code),
+                      ),
+                    );
+                  },
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child: country.flagUrl.isNotEmpty

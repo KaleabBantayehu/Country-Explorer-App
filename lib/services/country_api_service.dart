@@ -14,7 +14,7 @@ class CountryApiService {
 
   Future<List<Country>> fetchAllCountries() async {
     final uri = Uri.https(_baseUrl, '/v3.1/all', {
-      'fields': 'name,flags,region,population',
+      'fields': 'name,flags,region,population,cca3',
     });
 
     return _fetchWithRetry(uri);
@@ -70,6 +70,12 @@ class CountryApiService {
   }
 
   Future<Country> fetchCountryByCode(String code) async {
+    if (code.isEmpty || code.length != 3) {
+      throw ApiException(
+        'Invalid country code: $code. Must be a 3-letter code.',
+      );
+    }
+
     final uri = Uri.https(_baseUrl, '/v3.1/alpha/$code');
 
     return _fetchSingleWithRetry(uri);
