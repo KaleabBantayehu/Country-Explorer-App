@@ -42,7 +42,9 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
+    setState(() => _isLoading = true);
     _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
       _performSearch(query);
     });
   }

@@ -16,6 +16,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final CountryApiService _apiService = CountryApiService();
   late Future<List<Country>> _futureCountries;
+  List<Country>? _allCountries;
+  int _visibleCount = 20;
+  bool _isUsingCache = false;
 
   @override
   void initState() {
@@ -25,6 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _retryFetch() {
     setState(() {
+      _allCountries = null;
+      _visibleCount = 20;
+      _isUsingCache = false;
       _futureCountries = _apiService.fetchAllCountries();
     });
   }
@@ -47,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Country Explorer'),
+        title: Text('Country Explorer${_isUsingCache ? ' (Cached)' : ''}'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -102,14 +108,39 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
+          _allCountries ??= countries;
+          _isUsingCache = _apiService.lastCallUsedCache;
+
           return ListView.builder(
             padding: const EdgeInsets.symmetric(
               vertical: 8.0,
               horizontal: 12.0,
             ),
-            itemCount: countries.length,
+            itemCount: _visibleCount < _allCountries!.length
+                ? _visibleCount + 1
+                : _visibleCount,
             itemBuilder: (context, index) {
-              final Country country = countries[index];
+              if (index == _visibleCount &&
+                  _visibleCount < _allCountries!.length) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _visibleCount = (_visibleCount + 20).clamp(
+                            0,
+                            _allCountries!.length,
+                          );
+                        });
+                      },
+                      child: const Text('Load More'),
+                    ),
+                  ),
+                );
+              }
+
+              final Country country = _allCountries![index];
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 6.0),
                 child: ListTile(

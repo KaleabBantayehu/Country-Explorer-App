@@ -11,13 +11,55 @@ class CountryApiService {
   final String _baseUrl = 'restcountries.com';
   final Duration _timeout = const Duration(seconds: 10);
   final Map<String, String> _headers = {'Accept': 'application/json'};
+  final Duration _cacheTtl = const Duration(minutes: 5);
+
+  List<Country>? _cachedCountries;
+  DateTime? _cacheTime;
+  bool _lastCallUsedCache = false;
+
+  bool get lastCallUsedCache => _lastCallUsedCache;
 
   Future<List<Country>> fetchAllCountries() async {
-    final uri = Uri.https(_baseUrl, '/v3.1/all', {
-      'fields': 'name,flags,region,population,cca3',
-    });
+    if (_isCacheValid()) {
+      _lastCallUsedCache = true;
+      // Optionally refresh in background
+      unawaited(_refreshCache());
+      return _cachedCountries!;
+    } else {
+      _lastCallUsedCache = false;
+      return await _fetchAndCache();
+    }
+  }
 
-    return _fetchWithRetry(uri);
+  bool _isCacheValid() {
+    return _cachedCountries != null &&
+        _cacheTime != null &&
+        DateTime.now().difference(_cacheTime!) < _cacheTtl;
+  }
+
+  Future<void> _refreshCache() async {
+    try {
+      final countries = await _fetchWithRetry(
+        Uri.https(_baseUrl, '/v3.1/all', {
+          'fields': 'name,flags,region,population,cca3',
+        }),
+      );
+      _cachedCountries = countries;
+      _cacheTime = DateTime.now();
+    } catch (_) {
+      // Ignore errors in background refresh
+    }
+  }
+
+  Future<List<Country>> _fetchAndCache() async {
+    final countries = await _fetchWithRetry(
+      Uri.https(_baseUrl, '/v3.1/all', {
+        'fields': 'name,flags,region,population,cca3',
+      }),
+    );
+    _cachedCountries = countries;
+    _cacheTime = DateTime.now();
+    return countries;
   }
 
   Future<List<Country>> _fetchWithRetry(Uri uri) async {
