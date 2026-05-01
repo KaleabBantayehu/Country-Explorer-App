@@ -67,13 +67,16 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Country Details')),
       body: FutureBuilder<Country>(
         future: _futureCountry,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
+            );
           }
 
           if (snapshot.hasError) {
@@ -87,7 +90,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16.0),
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
@@ -102,10 +108,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
           final Country? country = snapshot.data;
           if (country == null) {
-            return const Center(
+            return Center(
               child: Text(
                 'Country not found.',
-                style: TextStyle(fontSize: 16.0),
+                style: TextStyle(fontSize: 16.0, color: colorScheme.onSurface),
               ),
             );
           }
@@ -115,77 +121,99 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Flag
                 Center(
-                  child: country.flagUrl.isNotEmpty
-                      ? Image.network(
-                          country.flagUrl,
-                          width: 200.0,
-                          height: 150.0,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.flag,
-                                size: 100.0,
-                                color: Colors.grey,
-                              ),
-                        )
-                      : const Icon(Icons.flag, size: 100.0, color: Colors.grey),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: country.flagUrl.isNotEmpty
+                        ? Image.network(
+                            country.flagUrl,
+                            width: 240.0,
+                            height: 150.0,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 240.0,
+                                  height: 150.0,
+                                  color: colorScheme.surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.flag,
+                                    size: 80.0,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                          )
+                        : Container(
+                            width: 240.0,
+                            height: 150.0,
+                            color: colorScheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.flag,
+                              size: 80.0,
+                              color: Colors.grey,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
+                Center(
+                  child: Text(
+                    country.name,
+                    style: TextStyle(
+                      fontSize: 28.0,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 const SizedBox(height: 24.0),
-
-                // Name
-                Text(
-                  country.name,
-                  style: const TextStyle(
-                    fontSize: 28.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+                _buildSectionHeader('Overview'),
+                _buildInfoCard(
+                  children: [
+                    _buildInfoRow('Capital', country.capital ?? 'N/A'),
+                    _buildInfoRow(
+                      'Region',
+                      country.region.isNotEmpty ? country.region : 'N/A',
+                    ),
+                    _buildInfoRow('Population', country.population.toString()),
+                    _buildInfoRow(
+                      'Area',
+                      '${country.area.toStringAsFixed(0)} km²',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16.0),
-
-                // Capital
-                _buildInfoRow('Capital', country.capital ?? 'N/A'),
-                const SizedBox(height: 8.0),
-
-                // Region
-                _buildInfoRow('Region', country.region),
-                const SizedBox(height: 8.0),
-
-                // Population
-                _buildInfoRow('Population', country.population.toString()),
-                const SizedBox(height: 8.0),
-
-                // Area
-                _buildInfoRow('Area', '${country.area.toStringAsFixed(0)} km²'),
-                const SizedBox(height: 16.0),
-
-                // Currencies
-                const Text(
-                  'Currencies',
-                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w600),
+                const SizedBox(height: 20.0),
+                _buildSectionHeader('Currencies'),
+                _buildInfoCard(
+                  children: [
+                    Text(
+                      _formatCurrencies(country.currencies),
+                      style: const TextStyle(fontSize: 16.0, height: 1.5),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8.0),
-                Text(_formatCurrencies(country.currencies)),
-                const SizedBox(height: 16.0),
-
-                // Languages
-                const Text(
-                  'Languages',
-                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w600),
+                const SizedBox(height: 20.0),
+                _buildSectionHeader('Languages'),
+                _buildInfoCard(
+                  children: [
+                    Text(
+                      _formatLanguages(country.languages),
+                      style: const TextStyle(fontSize: 16.0, height: 1.5),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8.0),
-                Text(_formatLanguages(country.languages)),
-                const SizedBox(height: 16.0),
-
-                // Timezones
-                const Text(
-                  'Timezones',
-                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.w600),
+                const SizedBox(height: 20.0),
+                _buildSectionHeader('Timezones'),
+                _buildInfoCard(
+                  children: [
+                    Text(
+                      country.timezones.join(', '),
+                      style: const TextStyle(fontSize: 16.0, height: 1.5),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8.0),
-                Text(country.timezones.join(', ')),
               ],
             ),
           );
@@ -194,15 +222,60 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16.0),
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20.0,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 16.0))),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({required List<Widget> children}) {
+    return Card(
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16.0,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16.0,
+                height: 1.5,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -51,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Country Explorer${_isUsingCache ? ' (Cached)' : ''}'),
@@ -71,7 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
         future: _futureCountries,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
+            );
           }
 
           if (snapshot.hasError) {
@@ -85,7 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16.0),
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 16.0),
                     ElevatedButton(
@@ -100,10 +107,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final List<Country>? countries = snapshot.data;
           if (countries == null || countries.isEmpty) {
-            return const Center(
-              child: Text(
-                'No countries found.',
-                style: TextStyle(fontSize: 16.0),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  'No countries found.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
               ),
             );
           }
@@ -113,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(
-              vertical: 8.0,
+              vertical: 12.0,
               horizontal: 12.0,
             ),
             itemCount: _visibleCount < _allCountries!.length
@@ -142,9 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
               final Country country = _allCountries![index];
               return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6.0),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12.0),
+                color: colorScheme.surface,
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.0),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14.0),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -154,35 +172,85 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: country.flagUrl.isNotEmpty
-                        ? Image.network(
-                            country.flagUrl,
-                            width: 64.0,
-                            height: 48.0,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.flag,
-                                  size: 40.0,
-                                  color: Colors.grey,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14.0),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14.0),
+                          child: country.flagUrl.isNotEmpty
+                              ? Image.network(
+                                  country.flagUrl,
+                                  width: 90.0,
+                                  height: 56.0,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        width: 90.0,
+                                        height: 56.0,
+                                        color:
+                                            colorScheme.surfaceContainerHighest,
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          Icons.flag,
+                                          size: 28.0,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                )
+                              : Container(
+                                  width: 90.0,
+                                  height: 56.0,
+                                  color: colorScheme.surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.flag,
+                                    size: 28.0,
+                                    color: Colors.grey,
+                                  ),
                                 ),
-                          )
-                        : const Icon(
-                            Icons.flag,
-                            size: 40.0,
-                            color: Colors.grey,
+                        ),
+                        const SizedBox(width: 14.0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                country.name,
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 6.0),
+                              Text(
+                                country.region.isNotEmpty
+                                    ? country.region
+                                    : 'Unknown region',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                              const SizedBox(height: 8.0),
+                              Text(
+                                'Population: ${country.population}',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 13.0,
+                                ),
+                              ),
+                            ],
                           ),
-                  ),
-                  title: Text(
-                    country.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    country.region.isNotEmpty
-                        ? country.region
-                        : 'Unknown region',
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 18.0,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

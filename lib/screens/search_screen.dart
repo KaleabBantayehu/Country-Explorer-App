@@ -98,6 +98,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Search Countries')),
       body: Padding(
@@ -106,10 +108,20 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             TextField(
               controller: _controller,
-              decoration: const InputDecoration(
+              style: TextStyle(color: colorScheme.onSurface),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
                 labelText: 'Search countries',
                 hintText: 'Enter country name',
-                border: OutlineInputBorder(),
+                hintStyle: const TextStyle(color: Colors.white54),
+                labelStyle: const TextStyle(color: Colors.white70),
+                prefixIconColor: Colors.white70,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: colorScheme.surface,
               ),
               onChanged: _onSearchChanged,
             ),
@@ -122,18 +134,22 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody() {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     if (_controller.text.trim().isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'Start typing to search countries',
+          'Enter a country name to begin searching.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16.0),
+          style: TextStyle(fontSize: 16.0, color: colorScheme.onSurface),
         ),
       );
     }
 
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(color: colorScheme.primary),
+      );
     }
 
     if (_errorMessage != null) {
@@ -146,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16.0),
+                style: TextStyle(fontSize: 16.0, color: colorScheme.onSurface),
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
@@ -164,11 +180,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (_countries!.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No results found.',
+          'No countries match your search term.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16.0),
+          style: TextStyle(fontSize: 16.0, color: colorScheme.onSurface),
         ),
       );
     }
@@ -178,9 +194,13 @@ class _SearchScreenState extends State<SearchScreen> {
       itemBuilder: (context, index) {
         final Country country = _countries![index];
         return Card(
+          color: colorScheme.surface,
           margin: const EdgeInsets.only(bottom: 12.0),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(12.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.0),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14.0),
             onTap: () {
               Navigator.push(
                 context,
@@ -189,28 +209,71 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               );
             },
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: country.flagUrl.isNotEmpty
-                  ? Image.network(
-                      country.flagUrl,
-                      width: 64.0,
-                      height: 48.0,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.flag,
-                        size: 40.0,
-                        color: Colors.grey,
-                      ),
-                    )
-                  : const Icon(Icons.flag, size: 40.0, color: Colors.grey),
-            ),
-            title: Text(
-              country.name,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(
-              country.region.isNotEmpty ? country.region : 'Unknown region',
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: country.flagUrl.isNotEmpty
+                        ? Image.network(
+                            country.flagUrl,
+                            width: 72.0,
+                            height: 48.0,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 72.0,
+                                  height: 48.0,
+                                  color: colorScheme.surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.flag,
+                                    size: 28.0,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                          )
+                        : Container(
+                            width: 72.0,
+                            height: 48.0,
+                            color: colorScheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.flag,
+                              size: 28.0,
+                              color: Colors.grey,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 14.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          country.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16.0,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 6.0),
+                        Text(
+                          country.region.isNotEmpty
+                              ? country.region
+                              : 'Unknown region',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 14.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
